@@ -1,14 +1,12 @@
 import google.generativeai as genai
-import os
 import streamlit as st
+import os
 
-def configure_gemini():
-    """Configures the Gemini API using the API key from the environment."""
-    GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
-    if not GOOGLE_API_KEY:
-        raise ValueError("Please set the GOOGLE_API_KEY environment variable.")
-    genai.configure(api_key=GOOGLE_API_KEY)
-    print("Gemini API configured.")
+# Configure Gemini API key
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+if not GOOGLE_API_KEY:
+    raise ValueError("Please set the GOOGLE_API_KEY environment variable.")
+genai.configure(api_key=GOOGLE_API_KEY)
 
 def get_gemini_response(prompt):
     """
@@ -45,31 +43,27 @@ Here is some information about BillCut that you should use to answer the user's 
 
 * **Refinancing:** BillCut helps refinance debt by paying off credit card or personal loans and converting them into EMIs.
 * **Debt Settlement:** BillCut helps reduce outstanding loan or credit card dues by up to 50% for users facing recovery calls. This is not a loan service.
-* **Fees:** BillCut doesn't charge any fees, except for debt settlement, which has a ₹19 fee for a session with a financial advisor.
+* **Fees:** BillCut doesn't charge any fees, except for debt settlement, which has a ₹19 fee for a session with our financial advisor.
 * **Interest Rates:** The interest rates charged can vary from 12% to 19%.
 * **Loan Consolidation:** BillCut can help convert multiple loans into a single loan, and the user pays the NBFC directly.
 * **Loan Payment:** BillCut works in partnership with NBFCs.  The NBFCs pay off the user's loan amount.
-* **Fund Disbursement:** The NBFC transfers funds directly to the user's bank account, except for balance transfers, which are done via demand draft.
+* **Fund Disbursement:** The NBFC transfers funds directly to your bank account, except for balance transfers, which are done via demand draft.
 * **Foreclosure Charges:** The foreclosure charge is approximately 3% of the remaining amount.
 * **Credit Score Impact:** Refinancing does not negatively affect credit scores. Debt settlement will affect credit scores negatively.
 * **Work Email:** BillCut asks for work emails only to verify employment; it won't send any emails to the work email.
-* **Demand Draft:** A demand draft is a prepaid bank slip that guarantees payment, is safer than a cheque, and cannot bounce.
+* **Demand Draft:** A demand draft is a prepaid bank slip that guarantees payment, is safer than a cheque, and can't bounce.
 * **NBFCs:** Non-Banking Financial Companies (NBFCs) give loans and financial products but are not banks.
 * **NBFC Full Form:** The full form of NBFC is Non-Banking Financial Company.
-* **Credit Card Bill Payment:** BillCut pays the user's credit card bill by transferring funds to their account through its lending partners. The amount is converted into a low-interest EMI. The user must show proof of payment for their credit card.
+* **Credit Card Bill Payment:** BillCut pays your credit card bill by transferring funds to your account through its lending partners. The amount is converted into a low-interest EMI. The user must show proof of payment for your credit card.
 
 Here is the user's question: '{user_message}'
     """
     return prompt
 
-
-
 def main():
     """
     Main function to run the Streamlit chatbot application.
     """
-    configure_gemini() # Configure Gemini API
-
     st.title("BillCut Chatbot")
     st.write("Welcome to BillCut! Ask me anything about our services.")
 
@@ -93,7 +87,7 @@ def main():
 
         # Get response from Gemini
         full_prompt = create_prompt(prompt)  # Pass the user input
-        response = get_gemini_response(full_prompt)
+        response = get_gemini_response(prompt)
 
         # Handle response
         if response:
@@ -106,8 +100,6 @@ def main():
             st.session_state.messages.append({"role": "assistant", "content": error_message})
             with st.chat_message("assistant"):
                 st.markdown(error_message)
-        
-        # Force Streamlit to rerun to update the chat
         st.rerun()
 
 if __name__ == "__main__":
