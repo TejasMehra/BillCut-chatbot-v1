@@ -25,10 +25,10 @@ def get_api_key():
 
 # Configuration
 api_key = get_api_key()
-if api_key: # Only configure if api_key was successfully retrieved
+if api_key:  # Only configure if api_key was successfully retrieved
     genai.configure(api_key=api_key)
 else:
-    st.stop() # Stop if no API key is available
+    st.stop()  # Stop if no API key is available
 
 def get_gemini_response(prompt):
     """
@@ -54,9 +54,9 @@ def create_prompt(user_message):
     Creates a highly structured prompt for the Gemini API, tailored for BillCut, with detailed information and controlled output.
     """
     prompt = f"""
-    You are a helpful and informative chatbot for BillCut. BillCut is a fintech company that helps users manage their debt. 
+    You are a helpful and informative chatbot for BillCut. BillCut is a fintech company that helps users manage their debt.
 
-    Here is detailed information about BillCut's services. Use this information to answer user questions.  Be concise. If the user asks for more details, offer them.
+    Here is detailed information about BillCut's services. Use this information to answer user questions. Be concise. If the user asks for more details, offer them.
 
     BillCut helps refinance debt through its lending partners by paying off credit card or personal loans and converting them into EMIs.
     BillCut also offers debt settlement, helping to reduce outstanding loan or credit card dues by up to 50% for users facing recovery calls. This is not a loan service.
@@ -77,6 +77,7 @@ def create_prompt(user_message):
     """
     return prompt
 
+
 def main():
     """
     Main function to run the Streamlit chatbot application.
@@ -86,7 +87,9 @@ def main():
 
     # Initialize chat history in session state
     if "messages" not in st.session_state:
-        st.session_state.messages = []
+        st.session_state.messages = [
+            {"role": "assistant", "content": "Hello! How can I assist you today?"}
+        ]
 
     # Display chat messages from history on app rerun
     for message in st.session_state.messages:
@@ -97,10 +100,6 @@ def main():
     if prompt := st.chat_input("Your question"):
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        # Get response from Gemini
         full_prompt = create_prompt(prompt)
         response = get_gemini_response(full_prompt)
 
