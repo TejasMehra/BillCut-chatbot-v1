@@ -38,61 +38,40 @@ def get_gemini_response(prompt):
         prompt: The prompt message to send to the Gemini API.
 
     Returns:
-        The response text from the Gemini API, or None on error.
+        The response text from the Gemini API.
     """
     model = genai.GenerativeModel('gemini-1.5-flash-8b')
     try:
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        print(f"Error generating response: {e}")
-        return "I encountered an error while processing your request."  # Return a string, not None
+        error_message = f"I encountered an error while processing your request: {e}"
+        st.error(error_message)
+        return error_message
 
 def create_prompt(user_message):
     """
-    Creates a highly structured prompt for the Gemini API, with very clear instructions and examples.
+    Creates a highly structured prompt for the Gemini API, tailored for BillCut, with detailed information.
     """
     prompt = f"""
-    You are a chatbot named Sophie, a customer service representative for BillCut. 
-    BillCut is a fintech company that helps users manage their debt. Your goal is to provide concise and accurate information.
+    You are Sophie, a helpful and informative chatbot for BillCut. BillCut is a fintech company that helps users manage their debt.
 
-    Here is the *only* information you are allowed to use.  Do *not* use any other information, and do not make up any details.  Respond *exactly* as specified.
+    Here is detailed information about BillCut's services. Use this information to answer user questions thoroughly.
 
-    COMPANY INFORMATION:
-    
-    -   **Refinancing:** BillCut helps refinance debt by paying off existing credit card or personal loans and converting them into Equated Monthly Installments (EMIs).
-    -   **Debt Settlement:** BillCut assists users facing recovery calls by helping to reduce their outstanding loan or credit card dues by up to 50%.  This is *not* a loan service.
-    -   **Fees:** BillCut does not charge any fees, except for debt settlement, which has a ₹19 fee for a session with a financial advisor.
-    -   **Interest Rates:** Interest rates for refinancing vary from 12% to 19%.
-    -   **Loan Consolidation:** BillCut can consolidate multiple loans into a single loan. Users make payments directly to the Non-Banking Financial Company (NBFC).
-    -   **Loan Payment:** BillCut works in partnership with NBFCs. The NBFCs pay off the user's loan amount.
-    -   **Fund Disbursement:** NBFCs transfer funds directly to the user's bank account, except for balance transfers, which are handled via demand draft.
-    -   **Foreclosure Charges:** The foreclosure charge is approximately 3% of the remaining loan amount.
-    -   **Credit Score Impact:** Refinancing does not negatively affect credit scores. Debt settlement *will* negatively affect credit scores.
-    -   **Work Email:** BillCut asks for work emails only to verify employment. BillCut will not send any emails to the work email address.
-    -   **Demand Draft:** A demand draft is a prepaid bank slip that guarantees payment. It is safer than a check and cannot bounce.
-    -   **NBFCs:** Non-Banking Financial Companies (NBFCs) provide loans and other financial products but are not banks.
-    -   **NBFC Full Form:** The full form of NBFC is Non-Banking Financial Company.
-    -   **Credit Card Bill Payment:** BillCut pays the user's credit card bill by transferring funds to their account through its lending partners. The amount is converted into a low-interest EMI. The user must provide proof of payment for their credit card.
-    
-    INSTRUCTIONS:
-
-    1.  Be brief and professional.
-    2.  Answer the user's question using *only* the information in the "COMPANY INFORMATION" section above.
-    3.  Do *not* make up any information.
-    4.  If the user asks a question that cannot be answered from the provided information, respond *exactly* with the phrase: "I'm sorry, I cannot answer that question with the information I have."
-    5.  Do not include any introductory phrases like "According to the provided information:".  Just provide the answer.
-
-    EXAMPLES:
-    
-    User: What is BillCut?
-    Response: BillCut is a fintech company that helps users manage their debt.
-    
-    User: What is your fee for refinancing?
-    Response: BillCut does not charge any fees.
-    
-    User:  What is the interest rate for debt settlement?
-    Response: I'm sorry, I cannot answer that question with the information I have.
+    BillCut helps refinance your debt through its lending partners. For example, BillCut can pay off your credit card or personal loan and convert it into EMIs.
+    BillCut also offers debt settlement, where we help reduce your outstanding loans or credit card dues by up to 50% if you're facing recovery calls. Note: This is not a loan service.
+    BillCut doesn't charge any fees, except for debt settlement, which has a ₹19 fee for a session with a financial advisor.
+    The interest rates charged can vary from 12% to 19%.
+    With the help of BillCut, you can convert multiple loans to a single loan and pay the NBFC directly.
+    BillCut works in partnership with NBFCs. With the help of NBFCs, BillCut will pay off your loan amount.
+    The NBFC transfers funds directly to your bank account, except for balance transfers, which are done via demand draft.
+    The foreclosure charge is approximately 3 percent of the remaining amount.
+    Refinancing does not negatively affect your credit score. However, debt settlement will affect your credit score negatively.
+    BillCut asks for your work email only to verify your employment. BillCut won't send any emails to it.
+    A demand draft is a prepaid bank slip that guarantees payment, is safer than a cheque, and can't bounce.
+    NBFCs give loans and financial products, but they're not banks.
+    The full form of NBFC is Non-Banking Financial Company.
+    BillCut pays your credit card bill by transferring funds to your account through its lending partners. The amount is converted into a low-interest EMI. You must show proof of payment for your credit card.
 
     Here is the user's question: '{user_message}'
     """
@@ -127,18 +106,11 @@ def main():
         full_prompt = create_prompt(prompt)
         response = get_gemini_response(full_prompt)
 
-        # Handle response
-        if response:
-            # Add assistant message to chat history
-            st.session_state.messages.append({"role": "assistant", "content": response})
-            with st.chat_message("assistant"):
-                st.markdown(response)
-        else:
-            error_message = "I'm sorry, I encountered an error processing your request."
-            st.session_state.messages.append({"role": "assistant", "content": error_message})
-            with st.chat_message("assistant"):
-                st.markdown(error_message)
+        # Add assistant message to chat history
+        st.session_state.messages.append({"role": "assistant", "content": response})
+        with st.chat_message("assistant"):
+            st.markdown(response)
         st.rerun()
 
 if __name__ == "__main__":
-        main()
+    main()
