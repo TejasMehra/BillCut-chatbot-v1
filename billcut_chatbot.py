@@ -30,6 +30,7 @@ if api_key:  # Only configure if api_key was successfully retrieved
 else:
     st.stop()  # Stop if no API key is available
 
+
 def get_gemini_response(prompt):
     """
     Generates a response from the Gemini API based on the given prompt.
@@ -49,31 +50,34 @@ def get_gemini_response(prompt):
         st.error(error_message)
         return error_message
 
+
 def create_prompt(user_message):
     """
-    Creates a highly structured prompt for the Gemini API, tailored for BillCut, with detailed information and controlled output.
+    Creates a highly structured prompt for the Gemini API, tailored for BillCut,
+    with a focus on direct answers and handling follow-up questions.
     """
     prompt = f"""
-    You are a helpful and informative chatbot for BillCut. BillCut is a fintech company that helps users manage their debt.
+    You are Sophie, a helpful and informative chatbot for BillCut.  BillCut is a fintech company that helps users manage their debt.  Your goal is to provide accurate and concise information about BillCut.
 
-    Here is detailed information about BillCut's services. Use this information to answer user questions. Be concise. If the user asks for more details, offer them.
+    Here is detailed information about BillCut's services. Use this information to answer user questions directly and accurately.  Do not add any extra information.
 
-    BillCut helps refinance debt through its lending partners by paying off credit card or personal loans and converting them into EMIs.
-    BillCut also offers debt settlement, helping to reduce outstanding loan or credit card dues by up to 50% for users facing recovery calls. This is not a loan service.
-    BillCut doesn't charge fees, except for debt settlement, which has a ₹19 fee for a session with a financial advisor.
-    Interest rates for refinancing vary from 12% to 19%.
-    BillCut can convert multiple loans to a single loan, with users paying the NBFC directly.
-    BillCut works in partnership with NBFCs to pay off loan amounts.
-    NBFCs transfer funds directly to user bank accounts, except for balance transfers, which are handled via demand draft.
-    The foreclosure charge is approximately 3% of the remaining amount.
-    Refinancing does not negatively affect credit scores, but debt settlement will.
-    BillCut asks for work emails only to verify employment and will not send emails to them.
-    A demand draft is a prepaid bank slip that guarantees payment, safer than a cheque and cannot bounce.
-    NBFCs provide loans and financial products but are not banks.
-    The full form of NBFC is Non-Banking Financial Company.
-    BillCut pays credit card bills by transferring funds to user accounts through lending partners, converting the amount to a low-interest EMI. Users must show proof of payment.
+    Refinancing: BillCut helps refinance debt through its lending partners by paying off credit card or personal loans and converting them into EMIs.
+    Debt Settlement: BillCut also offers debt settlement, helping to reduce outstanding loan or credit card dues by up to 50% for users facing recovery calls. This is not a loan service.
+    Fees: BillCut doesn't charge fees, except for debt settlement, which has a ₹19 fee for a session with a financial advisor.
+    Interest Rates: Interest rates for refinancing vary from 12% to 19%.
+    Loan Consolidation: BillCut can convert multiple loans to a single loan, with users paying the NBFC directly.
+    Loan Payment: BillCut works in partnership with NBFCs to pay off loan amounts.
+    Fund Disbursement: NBFCs transfer funds directly to user bank accounts, except for balance transfers, which are handled via demand draft.
+    Foreclosure Charges: The foreclosure charge is approximately 3% of the remaining amount.
+    Credit Score Impact: Refinancing does not negatively affect credit scores, but debt settlement will.
+    Work Email: BillCut asks for work emails only to verify employment and will not send emails to them.
+    Demand Draft: A demand draft is a prepaid bank slip that guarantees payment, safer than a cheque and cannot bounce.
+    NBFCs:  Provide loans and financial products but are not banks.
+    NBFC Full Form: Non-Banking Financial Company.
+    Credit Card Bill Payment: BillCut pays credit card bills by transferring funds to user accounts through lending partners, converting the amount to a low-interest EMI. Users must show proof of payment.
 
-    Here is the user's question: '{user_message}'
+    User: {user_message}
+    Response:
     """
     return prompt
 
@@ -100,14 +104,26 @@ def main():
     if prompt := st.chat_input("Your question"):
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        # Get response from Gemini
         full_prompt = create_prompt(prompt)
         response = get_gemini_response(full_prompt)
 
-        # Add assistant message to chat history
-        st.session_state.messages.append({"role": "assistant", "content": response})
-        with st.chat_message("assistant"):
-            st.markdown(response)
+        # Check for details and offer more
+        if "more details" in prompt.lower() or "explain in detail" in prompt.lower():
+            #Augment the prompt to get more details
+            full_prompt = create_prompt(prompt)
+            response = get_gemini_response(full_prompt)
+
+        if response:
+            st.session_state.messages.append({"role": "assistant", "content": response})
+            with st.chat_message("assistant"):
+                st.markdown(response)
         st.rerun()
+
+
 
 if __name__ == "__main__":
     main()
