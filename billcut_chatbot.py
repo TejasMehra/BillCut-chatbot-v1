@@ -51,7 +51,7 @@ def get_gemini_response(prompt):
 
 def create_prompt(user_message):
     """
-    Creates a very explicit prompt for the Gemini API, tailored for BillCut.
+    Creates a prompt with Chain of Thought reasoning for BillCut.
     """
     prompt = f"""
     You are a chatbot named Sophie, a customer service representative for BillCut. 
@@ -66,7 +66,7 @@ def create_prompt(user_message):
     -   **Loan Consolidation:** BillCut can consolidate multiple loans into a single loan. Users make payments directly to the Non-Banking Financial Company (NBFC).
     -    **Loan Payment:** BillCut partners with NBFCs. The NBFCs pay off the user's loan amount.
     -   **Fund Disbursement:** NBFCs transfer funds directly to the user's bank account, except for balance transfers, which are handled via demand draft.
-    -   **Foreclosure Charges:** The foreclosure charge is approximately 3% of the remaining loan amount.
+
     -   **Credit Score Impact:** Refinancing does not negatively affect credit scores. Debt settlement *will* negatively affect credit scores.
     -   **Work Email:** BillCut asks for work emails only to verify employment. BillCut will not send any emails to the work email address.
     -   **Demand Draft:** A demand draft is a prepaid bank slip that guarantees payment. It is safer than a check and cannot bounce.
@@ -74,15 +74,21 @@ def create_prompt(user_message):
     -   **NBFC Full Form:** The full form of NBFC is Non-Banking Financial Company.
     -   **Credit Card Bill Payment:** BillCut pays the user's credit card bill by transferring funds to their account through its lending partners. The amount is converted into a low-interest EMI. The user must provide proof of payment for their credit card.
 
-    When answering a user question, follow these guidelines:
+        When answering a user question, follow these guidelines:
 
-    -   Be brief and professional.
-    -   Only use the information provided above. Do not make up any details.
-    -   If the user asks a question that cannot be answered from the provided information, respond with: "I'm sorry, I cannot answer that question with the information I have."
-    -   Do not include any introductory phrases like "According to the provided information". Just answer the question.
+        -   Be brief and professional.
+        -   Only use the information provided above. Do not make up any details.
+        -   If the user asks a question that cannot be answered from the provided information, respond with: "I'm sorry, I cannot answer that question with the information I have."
+        -   Do not include any introductory phrases like "According to the provided information". Just answer the question.
 
-    Here is the user's question: '{user_message}'
-    """
+        Here is an example of how to think step by step.
+
+        User: What is BillCut?
+        
+        Let's think step by step. BillCut is a fintech company. BillCut helps users manage their debt through lending partners and offers debt settlement services.
+
+        Here is the user's question: '{user_message}'
+        """
     return prompt
 
 def main():
@@ -112,7 +118,7 @@ def main():
 
         # Get response from Gemini
         full_prompt = create_prompt(prompt)  # Pass the user input
-        response = get_gemini_response(full_prompt)
+        response = get_gemini_response(prompt)
 
         # Handle response
         if response:
