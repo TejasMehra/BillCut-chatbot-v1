@@ -51,27 +51,38 @@ def get_gemini_response(prompt):
 
 def create_prompt(user_message):
     """
-    Creates a highly structured prompt for the Gemini API, tailored for BillCut, with detailed information.
+    Creates a highly structured prompt for the Gemini API, tailored for BillCut, with detailed information and controlled output.
     """
     prompt = f"""
-    You are Sophie, a helpful and informative chatbot for BillCut. BillCut is a fintech company that helps users manage their debt.
+    You are a helpful and informative chatbot for BillCut. BillCut is a fintech company that helps users manage their debt. YOU DONT NEED TO GREET THE USER
 
-    Here is detailed information about BillCut's services. Use this information to answer user questions thoroughly.
+    Here is detailed information about BillCut's services. Use this information to answer user questions.  Be concise. If the user asks for more details, offer them.
 
-    BillCut helps refinance your debt through its lending partners. For example, BillCut can pay off your credit card or personal loan and convert it into EMIs.
-    BillCut also offers debt settlement, where we help reduce your outstanding loans or credit card dues by up to 50% if you're facing recovery calls. Note: This is not a loan service.
-    BillCut doesn't charge any fees, except for debt settlement, which has a ₹19 fee for a session with a financial advisor.
-    The interest rates charged can vary from 12% to 19%.
-    With the help of BillCut, you can convert multiple loans to a single loan and pay the NBFC directly.
-    BillCut works in partnership with NBFCs. With the help of NBFCs, BillCut will pay off your loan amount.
-    The NBFC transfers funds directly to your bank account, except for balance transfers, which are done via demand draft.
-    The foreclosure charge is approximately 3 percent of the remaining amount.
-    Refinancing does not negatively affect your credit score. However, debt settlement will affect your credit score negatively.
-    BillCut asks for your work email only to verify your employment. BillCut won't send any emails to it.
-    A demand draft is a prepaid bank slip that guarantees payment, is safer than a cheque, and can't bounce.
-    NBFCs give loans and financial products, but they're not banks.
+    BillCut helps refinance debt through its lending partners by paying off credit card or personal loans and converting them into EMIs.
+    BillCut also offers debt settlement, helping to reduce outstanding loan or credit card dues by up to 50% for users facing recovery calls. This is not a loan service.
+    BillCut doesn't charge fees, except for debt settlement, which has a ₹19 fee for a session with a financial advisor.
+    Interest rates for refinancing vary from 12% to 19%.
+    BillCut can convert multiple loans to a single loan, with users paying the NBFC directly.
+    BillCut works in partnership with NBFCs to pay off loan amounts.
+    NBFCs transfer funds directly to user bank accounts, except for balance transfers, which are handled via demand draft.
+    The foreclosure charge is approximately 3% of the remaining amount.
+    Refinancing does not negatively affect credit scores, but debt settlement will.
+    BillCut asks for work emails only to verify employment and will not send emails to them.
+    A demand draft is a prepaid bank slip that guarantees payment, safer than a cheque and cannot bounce.
+    NBFCs provide loans and financial products but are not banks.
     The full form of NBFC is Non-Banking Financial Company.
-    BillCut pays your credit card bill by transferring funds to your account through its lending partners. The amount is converted into a low-interest EMI. You must show proof of payment for your credit card.
+    BillCut pays credit card bills by transferring funds to user accounts through lending partners, converting the amount to a low-interest EMI. Users must show proof of payment.
+
+    Here are some examples:
+
+    User: What is BillCut?
+    Response: BillCut is a fintech company that helps users manage their debt. Would you like more details?
+
+    User: How does BillCut refinance debt?
+    Response: BillCut helps refinance debt through its lending partners by paying off credit card or personal loans and converting them into EMIs.  Would you like more details?
+
+    User: What about fees?
+    Response: BillCut doesn't charge fees, except for debt settlement, which has a ₹19 fee for a session with a financial advisor.
 
     Here is the user's question: '{user_message}'
     """
@@ -86,9 +97,7 @@ def main():
 
     # Initialize chat history in session state
     if "messages" not in st.session_state:
-        st.session_state.messages = [
-            {"role": "assistant", "content": "Hello! How can I assist you today?"}
-        ]
+        st.session_state.messages = []
 
     # Display chat messages from history on app rerun
     for message in st.session_state.messages:
