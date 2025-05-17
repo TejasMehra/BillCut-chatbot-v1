@@ -2,11 +2,33 @@ import google.generativeai as genai
 import streamlit as st
 import os
 
-# Configure Gemini API key
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
-if not GOOGLE_API_KEY:
-    raise ValueError("Please set the GOOGLE_API_KEY environment variable.")
-genai.configure(api_key=GOOGLE_API_KEY)
+def get_api_key():
+    """
+    Retrieves the GOOGLE_API_KEY, prioritizing Streamlit secrets for cloud deployment.
+    """
+    try:
+        # 1. Try to get the API key from Streamlit secrets (for Streamlit Cloud)
+        api_key = st.secrets["GOOGLE_API_KEY"]  
+        return api_key  # Return the key if found in secrets
+    except KeyError:
+        # 2. If not found in Streamlit secrets, try the environment variable (for local)
+        api_key = os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
+            st.error("Please set the GOOGLE_API_KEY environment variable or Streamlit secret.")
+            st.stop()  # Stop execution if the key is missing
+        return api_key # Return the key if found in environment
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {e}")
+        st.stop()
+        return None
+
+# Get and configure the API key
+api_key = get_api_key()  # Call the function to get the key
+if api_key:
+    genai.configure(api_key=api_key)  # Configure Gemini if a key was found
+else:
+    st.stop() # Stop if no API key
+
 
 def get_gemini_response(prompt):
     """
