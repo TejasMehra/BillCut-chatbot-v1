@@ -4,30 +4,31 @@ import os
 
 def get_api_key():
     """
-    Retrieves the GOOGLE_API_KEY, prioritizing Streamlit secrets for cloud deployment.
+    Retrieves the GOOGLE_API_KEY from Streamlit secrets or the environment.
     """
     try:
-        # 1. Try to get the API key from Streamlit secrets (for Streamlit Cloud)
-        api_key = st.secrets["GOOGLE_API_KEY"]  
-        return api_key  # Return the key if found in secrets
+        # First, try to get it from Streamlit secrets (for cloud deployment)
+        api_key = st.secrets["GOOGLE_API_KEY"]
+        return api_key
     except KeyError:
-        # 2. If not found in Streamlit secrets, try the environment variable (for local)
-        api_key = os.environ.get("GOOGLE_API_KEY")
-        if not api_key:
-            st.error("Please set the GOOGLE_API_KEY environment variable or Streamlit secret.")
-            st.stop()  # Stop execution if the key is missing
-        return api_key # Return the key if found in environment
-    except Exception as e:
-        st.error(f"An unexpected error occurred: {e}")
-        st.stop()
-        return None
+        try:
+            # If not found in secrets, try the environment (for local)
+            api_key = os.environ.get("GOOGLE_API_KEY")
+            if not api_key:
+                raise ValueError(
+                    "Please set the GOOGLE_API_KEY environment variable or Streamlit secret."
+                )
+            return api_key
+        except Exception as e:
+            st.error(f"Error retrieving API Key: {e}") # use st.error
+            return None  # Important: Return None in case of error
 
-# Get and configure the API key
-api_key = get_api_key()  # Call the function to get the key
-if api_key:
-    genai.configure(api_key=api_key)  # Configure Gemini if a key was found
+# Configuration
+api_key = get_api_key()
+if api_key: # Only configure if api_key was successfully retrieved
+    genai.configure(api_key=api_key)
 else:
-    st.stop() # Stop if no API key
+    st.stop() # Stop if no API key is available
 
 
 def get_gemini_response(prompt):
@@ -50,35 +51,37 @@ def get_gemini_response(prompt):
 
 def create_prompt(user_message):
     """
-    Creates a custom prompt for the Gemini API, tailored for BillCut, a debt refinancing startup.
-
-    Args:
-        user_message: The user's input message.
-
-    Returns:
-        A formatted prompt string to be used with the Gemini API.
+    Creates a very explicit prompt for the Gemini API, tailored for BillCut.
     """
-    prompt = f"""You are Sophie, a helpful and informative chatbot for BillCut. 
-BillCut is a fintech company that helps users refinance their debt through its lending partners and offers debt settlement services. 
+    prompt = f"""
+    You are a chatbot named Sophie, a customer service representative for BillCut. 
+    BillCut is a fintech company that helps users manage their debt. Your goal is to provide concise and accurate information.
 
-Here is some information about BillCut that you should use to answer the user's questions.  Be concise and professional.
+    Here are some details about BillCut's services.  Use this information *exactly* as provided:
 
-* **Refinancing:** BillCut helps refinance debt by paying off credit card or personal loans and converting them into EMIs.
-* **Debt Settlement:** BillCut helps reduce outstanding loan or credit card dues by up to 50% for users facing recovery calls. This is not a loan service.
-* **Fees:** BillCut doesn't charge any fees, except for debt settlement, which has a ₹19 fee for a session with our financial advisor.
-* **Interest Rates:** The interest rates charged can vary from 12% to 19%.
-* **Loan Consolidation:** BillCut can help convert multiple loans into a single loan, and the user pays the NBFC directly.
-* **Loan Payment:** BillCut works in partnership with NBFCs.  The NBFCs pay off the user's loan amount.
-* **Fund Disbursement:** The NBFC transfers funds directly to your bank account, except for balance transfers, which are done via demand draft.
-* **Foreclosure Charges:** The foreclosure charge is approximately 3% of the remaining amount.
-* **Credit Score Impact:** Refinancing does not negatively affect credit scores. Debt settlement will affect credit scores negatively.
-* **Work Email:** BillCut asks for work emails only to verify employment; it won't send any emails to the work email.
-* **Demand Draft:** A demand draft is a prepaid bank slip that guarantees payment, is safer than a cheque, and can't bounce.
-* **NBFCs:** Non-Banking Financial Companies (NBFCs) give loans and financial products but are not banks.
-* **NBFC Full Form:** The full form of NBFC is Non-Banking Financial Company.
-* **Credit Card Bill Payment:** BillCut pays your credit card bill by transferring funds to your account through its lending partners. The amount is converted into a low-interest EMI. The user must show proof of payment for your credit card.
+    -   **Refinancing:** BillCut helps refinance debt by paying off existing credit card or personal loans and converting them into Equated Monthly Installments (EMIs).
+    -   **Debt Settlement:** BillCut assists users facing recovery calls by helping to reduce their outstanding loan or credit card dues by up to 50%.  This is *not* a loan service.
+    -   **Fees:** BillCut does not charge any fees, except for debt settlement, which has a ₹19 fee for a session with a financial advisor.
+    -   **Interest Rates:** Interest rates for refinancing vary from 12% to 19%.
+    -   **Loan Consolidation:** BillCut can consolidate multiple loans into a single loan. Users make payments directly to the Non-Banking Financial Company (NBFC).
+    -    **Loan Payment:** BillCut partners with NBFCs. The NBFCs pay off the user's loan amount.
+    -   **Fund Disbursement:** NBFCs transfer funds directly to the user's bank account, except for balance transfers, which are handled via demand draft.
+    -   **Foreclosure Charges:** The foreclosure charge is approximately 3% of the remaining loan amount.
+    -   **Credit Score Impact:** Refinancing does not negatively affect credit scores. Debt settlement *will* negatively affect credit scores.
+    -   **Work Email:** BillCut asks for work emails only to verify employment. BillCut will not send any emails to the work email address.
+    -   **Demand Draft:** A demand draft is a prepaid bank slip that guarantees payment. It is safer than a check and cannot bounce.
+    -   **NBFCs:** Non-Banking Financial Companies (NBFCs) provide loans and other financial products but are not banks.
+    -   **NBFC Full Form:** The full form of NBFC is Non-Banking Financial Company.
+    -   **Credit Card Bill Payment:** BillCut pays the user's credit card bill by transferring funds to their account through its lending partners. The amount is converted into a low-interest EMI. The user must provide proof of payment for their credit card.
 
-Here is the user's question: '{user_message}'
+    When answering a user question, follow these guidelines:
+
+    -   Be brief and professional.
+    -   Only use the information provided above. Do not make up any details.
+    -   If the user asks a question that cannot be answered from the provided information, respond with: "I'm sorry, I cannot answer that question with the information I have."
+    -   Do not include any introductory phrases like "According to the provided information". Just answer the question.
+
+    Here is the user's question: '{user_message}'
     """
     return prompt
 
@@ -109,7 +112,7 @@ def main():
 
         # Get response from Gemini
         full_prompt = create_prompt(prompt)  # Pass the user input
-        response = get_gemini_response(prompt)
+        response = get_gemini_response(full_prompt)
 
         # Handle response
         if response:
