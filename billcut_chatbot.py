@@ -1,129 +1,153 @@
-import google.generativeai as genai
 import streamlit as st
+import google.generativeai as genai
 import os
 
+# --- API Key Loader ---
 def get_api_key():
-    """
-    Retrieves the GOOGLE_API_KEY from Streamlit secrets or the environment.
-    """
     try:
-        # First, try to get it from Streamlit secrets (for cloud deployment)
-        api_key = st.secrets["GOOGLE_API_KEY"]
-        return api_key
+        return st.secrets["GOOGLE_API_KEY"]
     except KeyError:
-        try:
-            # If not found in secrets, try the environment (for local)
-            api_key = os.environ.get("GOOGLE_API_KEY")
-            if not api_key:
-                raise ValueError(
-                    "Please set the GOOGLE_API_KEY environment variable or Streamlit secret."
-                )
-            return api_key
-        except Exception as e:
-            st.error(f"Error retrieving API Key: {e}")
-            return None  # Important: Return None in case of error
+        api_key = os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
+            st.error("Please set the GOOGLE_API_KEY in Streamlit secrets or environment.")
+            return None
+        return api_key
 
-# Configuration
+# --- Gemini Setup ---
 api_key = get_api_key()
-if api_key:  # Only configure if api_key was successfully retrieved
+if api_key:
     genai.configure(api_key=api_key)
 else:
-    st.stop()  # Stop if no API key is available
+    st.stop()
 
+# --- System Prompt ---
+system_prompt = """
+You are Sophie, a helpful and friendly AI assistant for BillCut — a company that helps people in India get out of debt.
 
-def get_gemini_response(prompt):
-    """
-    Generates a response from the Gemini API based on the given prompt.
+Your tone is:
+- Friendly
+- Fun and a bit quirky
+- Supportive and to-the-point
 
-    Args:
-        prompt: The prompt message to send to the Gemini API.
+Your job:
+- Explain how BillCut helps with loans, EMIs, debt settlement, and money habits.
+- Use short, clear sentences.
+- Bring the conversation back to BillCut when possible.
+- Let the user lead — end the conversation naturally without forcing lines like “Want me to explain in detail?”
+- Always respond in the same language the user is using — English, Hindi or Hinglish.
 
-    Returns:
-        The response text from the Gemini API.
-    """
-    model = genai.GenerativeModel('gemini-1.5-flash-8b')
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        error_message = f"I encountered an error while processing your request: {e}"
-        st.error(error_message)
-        return error_message
+Never start replies with “Hi” or “Hey”.
+"""
 
+# --- Scripted Responses ---
+faq_responses = {
+    "what is billcut": "BillCut is a fintech company that does debt refinancing. Want to know more?",
+    "does billcut charge": "BillCut doesn’t charge any fees, except ₹19 for a session with our advisor during debt settlement.",
+    "interest rate": "The interest rate is usually between 12 to 19 percent.",
+    "multiple loans": "Yes! You can combine all your loans into one and pay directly via NBFC.",
+    "how does billcut pay": "BillCut works with NBFCs. They pay your loan amount directly.",
+    "will the funds come": "Yes! Funds come to your account — except in balance transfers, which use a demand draft.",
+    "foreclosure charge": "It's around 3% of the remaining amount.",
+    "credit score": "Nope! Your score won’t be affected — unless you go for debt settlement.",
+    "why work email": "Just to verify your job — we won’t send any mails there, promise!",
+    "what is demand draft": "It's like a prepaid cheque — but safer, and it can’t bounce.",
+    "what are nbfc": "NBFCs give loans like banks — but they’re not banks.",
+    "full form of nbfc": "NBFC stands for Non-Banking Financial Company.",
+    "how does billcut pay credit card": "BillCut pays your card via its lending partners."
+}
 
-def create_prompt(user_message):
-    """
-    Creates a highly structured prompt for the Gemini API, tailored for BillCut,
-    with a focus on direct answers and handling follow-up questions.
-    """
-    prompt = f"""
-    You are Sophie, a helpful and informative chatbot for BillCut.  BillCut is a fintech company that helps users manage their debt.  Your goal is to provide accurate and concise information about BillCut.
+# Longer follow-ups
+detailed_followups = {
+    "what is billcut": "BillCut helps refinance your debt through its lending partners — like converting credit card dues into EMIs. We also offer debt settlement.",
+    "how does billcut pay credit card": "BillCut pays your credit card bill by transferring funds to your account through its lending partners. The amount is converted into a low-interest EMI. You just show proof of payment for your credit card."
+}
 
-    Here is detailed information about BillCut's services. Use this information to answer user questions directly and accurately.  Do not add any extra information.
+# Soft repeat fallback
+repeat_followups = {
+    "what is billcut": "To recap — BillCut can turn your high-interest loans into manageable EMIs. We even negotiate with banks. Want help with your own case?",
+    "how does billcut pay credit card": "Again — funds go from our partners to your account. You pay the card and repay in EMIs. Want to explore options?"
+}
 
-    Refinancing: BillCut helps refinance debt through its lending partners by paying off credit card or personal loans and converting them into EMIs.
-    Debt Settlement: BillCut also offers debt settlement, helping to reduce outstanding loan or credit card dues by up to 50% for users facing recovery calls. This is not a loan service.
-    Fees: BillCut doesn't charge fees, except for debt settlement, which has a ₹19 fee for a session with a financial advisor.
-    Interest Rates: Interest rates for refinancing vary from 12% to 19%.
-    Loan Consolidation: BillCut can convert multiple loans to a single loan, with users paying the NBFC directly.
-    Loan Payment: BillCut works in partnership with NBFCs to pay off loan amounts.
-    Fund Disbursement: NBFCs transfer funds directly to user bank accounts, except for balance transfers, which are handled via demand draft.
-    Foreclosure Charges: The foreclosure charge is approximately 3% of the remaining amount.
-    Credit Score Impact: Refinancing does not negatively affect credit scores, but debt settlement will.
-    Work Email: BillCut asks for work emails only to verify employment and will not send emails to them.
-    Demand Draft: A demand draft is a prepaid bank slip that guarantees payment, safer than a cheque and cannot bounce.
-    NBFCs:  Provide loans and financial products but are not banks.
-    NBFC Full Form: Non-Banking Financial Company.
-    Credit Card Bill Payment: BillCut pays credit card bills by transferring funds to user accounts through lending partners, converting the amount to a low-interest EMI. Users must show proof of payment.
+# --- Streamlit App UI ---
+st.title("👋 Hi, how can I help you today?")
+st.caption("talk to me in whatever language you like: english, hindi or a mixture of both maybe...")
 
-    User: {user_message}
-    Response:
-    """
-    return prompt
+# --- Session State ---
+if "chat" not in st.session_state:
+    model = genai.GenerativeModel(
+        model_name="gemini-1.5-flash-8b",
+        system_instruction=system_prompt
+    )
+    st.session_state.chat = model.start_chat(history=[])
 
+if "messages" not in st.session_state:
+    st.session_state.messages = [{"role": "assistant", "content": "Hello! How can I help you with BillCut today?"}]
 
-def main():
-    """
-    Main function to run the Streamlit chatbot application.
-    """
-    st.title("BillCut Chatbot")
-    st.write("Welcome to BillCut! Ask me anything about our services.")
+if "last_question_key" not in st.session_state:
+    st.session_state.last_question_key = None
 
-    # Initialize chat history in session state
-    if "messages" not in st.session_state:
-        st.session_state.messages = [
-            {"role": "assistant", "content": "Hello! How can I assist you today?"}
-        ]
+if "followup_count" not in st.session_state:
+    st.session_state.followup_count = 0
 
-    # Display chat messages from history on app rerun
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+# --- Display Chat History ---
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-    # Accept user input
-    if prompt := st.chat_input("Your question"):
-        # Add user message to chat history
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+# --- Chat Input Logic ---
+if user_input := st.chat_input("Ask me anything about BillCut..."):
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    with st.chat_message("user"):
+        st.markdown(user_input)
 
-        # Get response from Gemini
-        full_prompt = create_prompt(prompt)
-        response = get_gemini_response(full_prompt)
+    input_lower = user_input.lower().strip()
+    response = None
 
-        # Check for details and offer more
-        if "more details" in prompt.lower() or "explain in detail" in prompt.lower():
-            #Augment the prompt to get more details
-            full_prompt = create_prompt(prompt)
-            response = get_gemini_response(full_prompt)
+    if input_lower in ["yes", "yeah", "sure", "ok", "okay"]:
+        key = st.session_state.last_question_key
+        count = st.session_state.followup_count
 
-        if response:
-            st.session_state.messages.append({"role": "assistant", "content": response})
-            with st.chat_message("assistant"):
-                st.markdown(response)
-        st.rerun()
+        if key:
+            if count == 0 and key in detailed_followups:
+                response = detailed_followups[key]
+                st.session_state.followup_count += 1
+            elif count == 1 and key in repeat_followups:
+                response = repeat_followups[key]
+                st.session_state.followup_count += 1
+            else:
+                try:
+                    response = st.session_state.chat.send_message(user_input).text
+                except Exception as e:
+                    response = "Oops! Something went wrong. Try again?"
+                    print("Gemini error:", e)
+        else:
+            try:
+                response = st.session_state.chat.send_message(user_input).text
+            except Exception as e:
+                response = "Oops! Something went wrong. Try again?"
+                print("Gemini error:", e)
 
+    else:
+        match = None
+        for key in faq_responses:
+            if key in input_lower:
+                match = key
+                break
 
+        if match:
+            response = faq_responses[match]
+            st.session_state.last_question_key = match
+            st.session_state.followup_count = 0
+        else:
+            try:
+                response = st.session_state.chat.send_message(user_input).text
+            except Exception as e:
+                response = "Oops! Something went wrong. Try again?"
+                print("Gemini error:", e)
+            st.session_state.last_question_key = None
+            st.session_state.followup_count = 0
 
-if __name__ == "__main__":
-    main()
+    # Display response
+    st.session_state.messages.append({"role": "assistant", "content": response})
+    with st.chat_message("assistant"):
+        st.markdown(response)
